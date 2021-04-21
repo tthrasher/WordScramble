@@ -16,6 +16,21 @@ struct ContentView: View {
     @State private var errorMessage = ""
     @State private var showingError = false
     
+    @State private var wordScore = 0
+    @State private var letterScore = 0
+    
+    // Challenge 3 asks me to put a text view below the list that displays the user's score. I am calculating score as 5 points per word + 1 point per letter in each word. This will be cleared when a new word is shown.
+    var score: Int {
+        let userWordsScore = usedWords.count * 5
+        var userLettersScore = 0
+        
+        for word in usedWords {
+            userLettersScore += word.count
+        }
+        
+        return userWordsScore + userLettersScore
+    }
+    
     var body: some View {
         NavigationView {
             VStack {
@@ -28,8 +43,14 @@ struct ContentView: View {
                     Image(systemName: "\($0.count).circle")
                     Text($0)
                 }
+                
+                Text("Score: \(score)")
             }
             .navigationBarTitle(rootWord)
+            // Challenge 2 asks me to add a left bar button that calls startGame() for a new word. I added having the method remove all usedWords.
+            .navigationBarItems(leading: Button("New word") {
+                startGame()
+            })
             .onAppear(perform: startGame)
             .alert(isPresented: $showingError) {
                 Alert(title: Text(errorTitle), message: Text(errorMessage), dismissButton: .default(Text("OK")))
@@ -42,6 +63,7 @@ struct ContentView: View {
             if let startWords = try? String(contentsOf: startWordsURL) {
                 let allWords = startWords.components(separatedBy: "\n")
                 rootWord = allWords.randomElement() ?? "silkworm"
+                usedWords.removeAll()
                 
                 return
             }
@@ -54,6 +76,17 @@ struct ContentView: View {
         let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
         guard answer.count > 0 else {
+            return
+        }
+        
+        // Challenge 1 asks me to prevent words that are shorter than three letters or are equal to our starting word.
+        guard answer.count > 2 else {
+            wordError(title: "Word too short", message: "Your words must be at least 3 letters!")
+            return
+        }
+        
+        guard answer != rootWord else {
+            wordError(title: "Lazy answer", message: "You just entered the original word! Find your own!")
             return
         }
         
